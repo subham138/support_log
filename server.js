@@ -23,6 +23,10 @@ app.use('/graphql', graphqlHTTP({
 }))
 
 app.get('/', async (req, res) => {
+    const dateFormat = require('dateformat');
+    var nowDate = new Date();
+    var day = dateFormat("2023-04-30", "dddd");
+    console.log(day);
 	res.send('Welcome To GraphQL API Server');
 })
 

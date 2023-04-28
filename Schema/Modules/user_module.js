@@ -13,15 +13,15 @@ const insert = (args) => {
         const pass = bcrypt.hashSync(password, 10);
         var datetime = dateFormat(new Date(), "yyyy-mm-dd HH:MM:ss");
         var approval_flag = user_type != 'C' ? 'U' : 'A';
-        let sql = `INSERT INTO md_users (user_id, password, code_no, user_type, approval_flag, user_status, created_by, created_dt) VALUES ("${user_id}", "${pass}", "${code_no}", "${user_type}", "${approval_flag}", "A", "${code_no}", "${datetime}")`;
+        let sql = `INSERT INTO md_users (user_id, password, code_no, user_type, approval_flag, user_status, created_by, created_dt) VALUES ("${user_id}", "${pass}", "${code_no}", "${user_type}", "A", "A", "${code_no}", "${datetime}")`;
         db.query(sql, async (err, lastId) => {
             if (err) {
                 console.log({ msg: err });
                 //data = { success: 0, message: 'Data Not Inserted' };
                 data = { success: 0, message: JSON.stringify(err) };
             } else {
-                await send_email(user_id);
-                data = { success: 1, message: 'Please check your mail to activate your account' };
+                // await send_email(user_id);
+                data = { success: 1, message: 'User created successfully.' };
             }
             resolve(data);
         })
@@ -61,6 +61,15 @@ const UserLogin = (args) => {
             }
             if (result.length > 0) {
                 if (await bcrypt.compare(password, result[0].password)) {
+                    var day = dateFormat(new Date(), "dddd");
+                    if (day == 'Sunday') {
+                        dayActiveFlag = 'N';
+                        result[0]['activeDayFlag'] = dayActiveFlag;
+                    } else {
+                        var chk_dt = await checkActiveDate();
+                        dayActiveFlag = chk_dt ? 'N' : 'Y';
+                        result[0]['activeDayFlag'] = dayActiveFlag;
+                    }
                     await UpdateLoginStatus(args, status);
                     data = { success: 1, message: JSON.stringify(result) };
                 } else {
@@ -73,6 +82,24 @@ const UserLogin = (args) => {
             resolve(data);
         });
     })
+}
+
+const checkActiveDate = () => { 
+    return new Promise((resolve, reject) => { 
+        var sql = `SELECT count(id) chk_dt FROM md_holiday WHERE evnt_date = "${dateFormat(new Date(), "yyyy-mm-dd")}"`;
+        var data = false
+        db.query(sql, (err, result) => { 
+            if (err) { 
+                console.log(err);
+                data = false;
+            } else if(result[0].chk_dt > 0) { 
+                data = true;
+            } else { 
+                data = false;
+            }
+            resolve(data);
+        });
+    });
 }
 
 const UpdateLoginStatus = (args, status) => {
@@ -185,13 +212,13 @@ const send_email = async (email_id) => {
         port: 25,
         secure: false,
         auth: {
-            user: 'support@synergicportal.in',
+            user: 'admin@synergicportal.in',
             pass: 'Support!sSs#2021'
         },
         tls: { rejectUnauthorized: false }
     });
     var mailOptions = {
-        from: 'support@synergicportal.in',
+        from: 'admin@synergicportal.in',
         to: email_id,
         subject: 'SynergicPortal',
         html: '<!doctype html>'
@@ -280,52 +307,52 @@ const ForgotPassword = (args) => {
 
                 // FOR SERVER
 
-                var transporter = nodemailer.createTransport({
-                    host: 'webmail.synergicportal.in',
-                    port: 25,
-                    secure: false,
-                    auth: {
-                        user: 'support@synergicportal.in',
-                        pass: 'Support!sSs#2021'
-                    },
-                    tls: { rejectUnauthorized: false }
-                });
-                var mailOptions = {
-                    from: 'support@synergicportal.in',
-                    to: email_id,
-                    subject: 'SynergicPortal',
-                    html: '<!doctype html>'
-                        + '<html>'
-                        + '<head>'
-                        + '<meta charset="utf-8">'
-                        + '<title>HomeworkHelp</title>'
-                        + '<style type="text/css">body{font - size: 14px; color: #494949; font-size: 15px; margin: 0; padding: 0;}</style>'
-                        + '</head>'
-                        + '<body>'
-                        + '<div style="max-width: 830px; margin: 0 auto; padding: 0 15px;">'
-                        + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
-                        + '<tbody>'
-                        + '<tr>'
-                        + '<td align="left" valign="top" style="text-align: center; padding: 14px 0; border-bottom: #ef3e36 solid 3px;"><img src="https://support.synergicportal.in/assets/Login_assets/images/logo.png" width="171" height="43" alt="" /></td>'
-                        + '</tr>'
-                        + '<tr>'
-                        + '<td align="left" valign="top" style="padding: 25px 15px 5px 15px; font-family: Arial; font-size: 15px; line-height: 25px;">'
-                        + '<center><p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;"><span style="color: #2fd025;">Your Password Reseted Successsfully..</span></p></center>'
-                        + '<p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;">Please try to login with new password <b><i>"password"</i></b>.</p>'
-                        + '<p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;"><b><small><i><span style="color: #d02525; font-size: 11px;">PLEASE RESET YOUR PASSWORD AFTER LOGIN, FOR SECURITY PURPOSE.</span></i></small></b></p>'
-                        + '</td>'
-                        + '</tr>'
-                        + '</tbody>'
-                        + '</table>'
-                        + '</div>'
-                        + '</body>'
-                        + '</html>'
-                };
-                await transporter.sendMail(mailOptions, (error, info) => {
-                    if (error) console.log(error);
-                    console.log('Email sent: ' + info.response);
-                })
-                data = { success: 1, message: 'Please Check Your Email For New Password' };
+                // var transporter = nodemailer.createTransport({
+                //     host: 'webmail.synergicportal.in',
+                //     port: 25,
+                //     secure: false,
+                //     auth: {
+                //         user: 'admin@synergicportal.in',
+                //         pass: 'Support!sSs#2021'
+                //     },
+                //     tls: { rejectUnauthorized: false }
+                // });
+                // var mailOptions = {
+                //     from: 'admin@synergicportal.in',
+                //     to: email_id,
+                //     subject: 'SynergicPortal',
+                //     html: '<!doctype html>'
+                //         + '<html>'
+                //         + '<head>'
+                //         + '<meta charset="utf-8">'
+                //         + '<title>HomeworkHelp</title>'
+                //         + '<style type="text/css">body{font - size: 14px; color: #494949; font-size: 15px; margin: 0; padding: 0;}</style>'
+                //         + '</head>'
+                //         + '<body>'
+                //         + '<div style="max-width: 830px; margin: 0 auto; padding: 0 15px;">'
+                //         + '<table width="100%" border="0" cellspacing="0" cellpadding="0">'
+                //         + '<tbody>'
+                //         + '<tr>'
+                //         + '<td align="left" valign="top" style="text-align: center; padding: 14px 0; border-bottom: #ef3e36 solid 3px;"><img src="https://support.synergicportal.in/assets/Login_assets/images/logo.png" width="171" height="43" alt="" /></td>'
+                //         + '</tr>'
+                //         + '<tr>'
+                //         + '<td align="left" valign="top" style="padding: 25px 15px 5px 15px; font-family: Arial; font-size: 15px; line-height: 25px;">'
+                //         + '<center><p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;"><span style="color: #2fd025;">Your Password Reseted Successsfully..</span></p></center>'
+                //         + '<p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;">Please try to login with new password <b><i>"password"</i></b>.</p>'
+                //         + '<p style=" padding: 0 0 25px 0; margin: 0; font-family: Arial; font-size: 15px; color: #494949;"><b><small><i><span style="color: #d02525; font-size: 11px;">PLEASE RESET YOUR PASSWORD AFTER LOGIN, FOR SECURITY PURPOSE.</span></i></small></b></p>'
+                //         + '</td>'
+                //         + '</tr>'
+                //         + '</tbody>'
+                //         + '</table>'
+                //         + '</div>'
+                //         + '</body>'
+                //         + '</html>'
+                // };
+                // await transporter.sendMail(mailOptions, (error, info) => {
+                //     if (error) console.log(error);
+                //     console.log('Email sent: ' + info.response);
+                // })
+                data = { success: 1, message: 'Please try to login with new password as "password"' };
             }
             resolve(data);
         })
@@ -432,7 +459,7 @@ const UploadFile = async (args) => {
     // console.log({ filename, mimetype, stream });
 }
 
-const RemoveImage = (args) => {
+const RemoveImage = (arganys) => {
     const { user_id } = args;
     var sql = `UPDATE md_users SET image = NULL WHERE user_id = "${user_id}"`;
     return new Promise((resolve, reject) => {

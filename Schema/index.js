@@ -13,6 +13,8 @@ const { client_get_tkt } = require("./Queries/Client_support_query");
 const { client_tkt_save, client_tkt_up_file, client_tkt_update } = require("./Mutations/Client_support_mutation");
 const { open_close_tkt, close_tkt, open_tkt_by_status, work_done, total_tkt_by_date, total_tkt_by_client } = require("./Queries/Dashboard_query");
 const { client_get_tkt_dashboard, client_monthly_support, client_open_close_tkt, client_last_tkt } = require("./Queries/Client_dashboard_query");
+const { get_holiday_list } = require("./Queries/Holiday_query");
+const { create_holiday } = require("./Mutations/Holiday_mutation");
 
 // console.log(USER.get_all_users);
 
@@ -53,7 +55,8 @@ const UserLogin = new GraphQLObjectType({
         clientGetTktDashboard: client_get_tkt_dashboard,
         clientMonthlySupport: client_monthly_support,
         clientOpenCloseTkt: client_open_close_tkt,
-        clientLastTke: client_last_tkt
+        clientLastTke: client_last_tkt,
+        holidayList: get_holiday_list
     }
 })
 
@@ -90,7 +93,8 @@ const UserMutation = new GraphQLObjectType({
         updateTktStatus: update_tkt_status,
         updateAssignEng: update_assign_eng,
         uploadImage: upload_file,
-        removeImage: remove_image
+        removeImage: remove_image,
+        saveHoliday: create_holiday
     }
 })
 
